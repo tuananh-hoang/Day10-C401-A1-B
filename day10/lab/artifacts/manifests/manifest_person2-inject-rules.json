@@ -1,0 +1,14 @@
+{
+  "run_id": "person2-inject-rules",
+  "run_timestamp": "2026-04-15T08:11:34.206418+00:00",
+  "raw_path": "data/raw/inject_rules_test.csv",
+  "raw_records": 4,
+  "cleaned_records": 2,
+  "quarantine_records": 2,
+  "latest_exported_at": "2026-04-10T08:00:00",
+  "no_refund_fix": false,
+  "skipped_validate": false,
+  "cleaned_csv": "artifacts/cleaned/cleaned_person2-inject-rules.csv",
+  "chroma_path": "./chroma_db",
+  "chroma_collection": "day10_kb"
+}

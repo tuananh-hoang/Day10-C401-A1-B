@@ -10,6 +10,7 @@ from __future__ import annotations
 import csv
 import hashlib
 import re
+from datetime import date
 from pathlib import Path
 from typing import Any, Dict, List, Tuple
 
@@ -40,6 +41,17 @@ def _norm_text(s: str) -> str:
 def _stable_chunk_id(doc_id: str, chunk_text: str, seq: int) -> str:
     h = hashlib.sha256(f"{doc_id}|{chunk_text}|{seq}".encode("utf-8")).hexdigest()[:16]
     return f"{doc_id}_{seq}_{h}"
+
+
+def _strip_control_chars(s: str) -> str:
+    """
+    R7 helper: Loại bỏ BOM (U+FEFF), ZWSP (U+200B) và các ký tự điều khiển ASCII
+    (0x00–0x1F) ngoại trừ tab, LF, CR — những ký tự này không hiển thị được và
+    làm hỏng embedding / exact-match downstream.
+    """
+    _CONTROL = frozenset(chr(c) for c in range(0x00, 0x20) if c not in (0x09, 0x0A, 0x0D))
+    _INVISIBLE = frozenset(('\ufeff', '\u200b', '\u200c', '\u200d'))
+    return "".join(c for c in s if c not in _CONTROL and c not in _INVISIBLE)
 
 
 def _normalize_effective_date(raw: str) -> Tuple[str, str]:
@@ -83,11 +95,12 @@ def clean_rows(
     4) Quarantine: chunk_text rỗng hoặc effective_date rỗng sau chuẩn hoá.
     5) Loại trùng nội dung chunk_text (giữ bản đầu).
     6) Fix stale refund: policy_refund_v4 chứa '14 ngày làm việc' → 7 ngày.
-    
+
     NEW RULES (Person 1 - Cleaning Owner):
     7) Quarantine: chunk_text chứa metadata/comments như "(ghi chú: ...)" - không nên có trong production text.
     8) Normalize: em dash (—) và en dash (–) → hyphen (-) để chuẩn hóa punctuation.
     9) Quarantine: chunk_text chứa cả "14 ngày" VÀ "7 ngày" (conflict trong cùng chunk).
+
     """
     quarantine: List[Dict[str, Any]] = []
     seen_text: set[str] = set()
@@ -102,6 +115,11 @@ def clean_rows(
 
         if doc_id not in ALLOWED_DOC_IDS:
             quarantine.append({**raw, "reason": "unknown_doc_id"})
+            continue
+
+        # R9 (new): exported_at bắt buộc — monitoring pipeline cần timestamp ingest.
+        if not (exported_at or "").strip():
+            quarantine.append({**raw, "reason": "missing_exported_at"})
             continue
 
         eff_norm, eff_err = _normalize_effective_date(eff_raw)
@@ -121,6 +139,22 @@ def clean_rows(
                 }
             )
             continue
+
+        # R8 (new): Ngày hiệu lực quá xa trong tương lai (> today + 365 ngày).
+        # Dấu hiệu lỗi migration hoặc placeholder chưa điền đúng ngày thật.
+        try:
+            eff_date_obj = date.fromisoformat(eff_norm)
+            if (eff_date_obj - date.today()).days > 365:
+                quarantine.append(
+                    {
+                        **raw,
+                        "reason": "far_future_effective_date",
+                        "effective_date_normalized": eff_norm,
+                    }
+                )
+                continue
+        except ValueError:
+            pass  # eff_norm đã validate — nhánh này không xảy ra thông thường
 
         if not text:
             quarantine.append({**raw, "reason": "missing_chunk_text"})
@@ -151,6 +185,7 @@ def clean_rows(
                 "detected": "chunk contains both '14 ngày' and '7 ngày'"
             })
             continue
+
 
         key = _norm_text(text)
         if key in seen_text:
