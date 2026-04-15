@@ -117,11 +117,6 @@ def clean_rows(
             quarantine.append({**raw, "reason": "unknown_doc_id"})
             continue
 
-        # R9 (new): exported_at bắt buộc — monitoring pipeline cần timestamp ingest.
-        if not (exported_at or "").strip():
-            quarantine.append({**raw, "reason": "missing_exported_at"})
-            continue
-
         eff_norm, eff_err = _normalize_effective_date(eff_raw)
         if eff_err == "empty_effective_date":
             quarantine.append({**raw, "reason": "missing_effective_date"})

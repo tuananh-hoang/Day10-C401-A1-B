@@ -1,0 +1,11 @@
+chunk_id,doc_id,chunk_text,effective_date,exported_at
+1,policy_refund_v4,"Chunk bình thường không có vấn đề gì.",2026-02-01,2026-04-10T08:00:00
+2,policy_refund_v4,"Chunk có metadata (ghi chú: test inject corruption) nên bị quarantine.",2026-02-01,2026-04-10T08:00:00
+3,policy_refund_v4,"Chunk có em dash — cần normalize.",2026-02-01,2026-04-10T08:00:00
+4,policy_refund_v4,"Chunk có conflict: yêu cầu trong 14 ngày hoặc 7 ngày.",2026-02-01,2026-04-10T08:00:00
+5,policy_refund_v4,"Chunk có 14 ngày làm việc (stale policy).",2026-02-01,2026-04-10T08:00:00
+6,sla_p1_2026,"SLA P1: 15 phút response.",2026-02-01,2026-04-10T08:00:00
+7,it_helpdesk_faq,"Khóa sau 5 lần sai.",2026-02-01,
+8,hr_leave_policy,"10 ngày phép (version cũ).",2025-01-01,2026-04-10T08:00:00
+9,unknown_doc,"Chunk từ doc không có trong allowlist.",2026-02-01,2026-04-10T08:00:00
+10,policy_refund_v4,"Duplicate chunk bình thường không có vấn đề gì.",2026-02-01,2026-04-10T08:00:00
