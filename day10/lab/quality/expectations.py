@@ -175,5 +175,39 @@ def run_expectations(cleaned_rows: List[Dict[str, Any]]) -> Tuple[List[Expectati
         )
     )
 
+    # E10 (new — Person 2): tất cả doc_id trong cleaned rows phải thuộc ALLOWED_DOC_IDS.
+    # Expectation này mirror contract allowlist từ cleaning_rules.py,
+    # đảm bảo khi nhóm thêm doc_id mới (vd access_control_sop), cả cleaning lẫn
+    # expectation đều đồng bộ — không cần sửa expectations.py mỗi khi contract đổi.
+    # severity=warn: cleaning đã lọc doc_id ở cổng đầu, nên cleaned rows về lý thuyết
+    #   luôn thuộc allowlist. Nếu E10 FAIL → có lỗi logic nghiêm trọng trong pipeline.
+    # metric_impact: thêm doc_id mới vào allowlist mà chưa update cleaning →
+    #   chunk đó không qua → warn khi count < expected; ngược lại cleaning lọc sai → E10 warn.
+    try:
+        from transform.cleaning_rules import ALLOWED_DOC_IDS as _ALLOWED
+        bad_docid = [
+            r for r in cleaned_rows
+            if (r.get("doc_id") or "") not in _ALLOWED
+        ]
+        ok10 = len(bad_docid) == 0
+        results.append(
+            ExpectationResult(
+                "doc_id_in_contract_allowlist",
+                ok10,
+                "warn",
+                f"out_of_contract_doc_ids={len(bad_docid)}"
+                + (f" ({set(r.get('doc_id') for r in bad_docid)})" if bad_docid else ""),
+            )
+        )
+    except ImportError:
+        results.append(
+            ExpectationResult(
+                "doc_id_in_contract_allowlist",
+                False,
+                "warn",
+                "import_error: cannot load ALLOWED_DOC_IDS from cleaning_rules",
+            )
+        )
+
     halt = any(not r.passed and r.severity == "halt" for r in results)
     return results, halt

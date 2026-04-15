@@ -11,13 +11,13 @@
 
 **File / module:**
 
-- `quality/expectations.py` — thêm 3 expectation mới (E7, E8, E9)
-- `transform/cleaning_rules.py` — đóng góp 3 rule (R7 BOM guard, R8 far-future date, R9 missing exported_at); phối hợp merge với Person 1's Rule 7/8/9
+- `quality/expectations.py` — thêm **4 expectation mới** (E7, E8, E9, E10)
+- `transform/cleaning_rules.py` — đóng góp R7 BOM guard, R8 far-future date, R9 missing exported_at; phối hợp merge với Person 1's Rule 7/8/9 và allowlist mở rộng
 
 **Kết nối với thành viên khác:**
 
-- **Person 1 (Cleaning Owner):** Merge rules trực tiếp trong `cleaning_rules.py` — Person 1 thêm Rule 7 (metadata quarantine), Rule 8 (dash normalize), Rule 9 (conflict day values). Tôi thêm R7 BOM, R8 far-future date, R9 missing exported_at. Thứ tự rule quan trọng: R9 và R8 của tôi chạy trước Rule 7 của Person 1 trong flow, còn R7 BOM của tôi chạy sau (lớp cuối cùng trước dedup).
-- **Person 3 (Embed Owner):** Expectation E8 (`chunk_ids_unique`) của tôi trực tiếp bảo vệ ChromaDB của Person 3 khỏi silent overwrite.
+- **Person 1 (Cleaning Owner):** Merge rules trực tiếp trong `cleaning_rules.py` — Person 1 thêm Rule 7 (metadata quarantine), Rule 8 (dash normalize), Rule 9 (conflict day values), và mở rộng `ALLOWED_DOC_IDS` với `access_control_sop` (sync từ `data_contract.yaml`). Tôi phản ứng bằng cách thêm **E10** — import trực tiếp `ALLOWED_DOC_IDS` từ `cleaning_rules.py` vào expectation, đảm bảo mỗi lần allowlist mở rộng đều được phản ánh ngay trong quality check.
+- **Person 3 (Embed Owner):** Expectation E8 (`chunk_ids_unique`) bảo vệ ChromaDB khỏi silent overwrite. Với `access_control_sop` được thêm, Person 3 có thể embed chunk mới này khi có data.
 
 **Bằng chứng:**
 
@@ -80,4 +80,4 @@ contains_expected=yes, hits_forbidden=no  ← pipeline chuẩn
 
 ## 5. Cải tiến tiếp theo (nếu có thêm 2 giờ)
 
-Tôi muốn tạo **bộ inject test tự động** chứng minh E3 vẫn hoạt động sau khi merge: thêm một dòng raw CSV chứa `"14 ngày làm việc"` plain text (không có metadata comment) và chạy `--no-refund-fix`. Dòng này sẽ không bị Rule 7 bắt (vì không có pattern `(ghi chú:...)`), nhưng E3 sẽ FAIL khi nó lọt vào cleaned rows. Điều này chứng minh hệ thống 2 lớp bảo vệ (Rule 7 + E3) hoạt động đúng theo từng trường hợp, không phải "may mắn" do 1 rule chặn hết.
+Tôi muốn viết **inject test tự động** chứng minh hệ thống 2 lớp bảo vệ hoạt động đúng: (1) thêm row có `"14 ngày làm việc"` plain text (không có metadata comment) và chạy `--no-refund-fix` — E3 sẽ FAIL vìRule 7 không chặn, chứng minh E3 vẫn hoạt động. (2) Thêm row `access_control_sop` vào raw CSV để chứng minh allowlist mở rộng hoạt động đúng: chunk được processed (không bị `unknown_doc_id`) và E10 vẫn OK.

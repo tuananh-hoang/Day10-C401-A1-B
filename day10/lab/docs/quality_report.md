@@ -1,10 +1,11 @@
 # Quality Report — Lab Day 10
 
-**run_id (final clean):** `person2-final` *(cập nhật sau khi merge rules Person 1 + Person 2)*  
+**run_id (final clean):** `person2-final` *(sẽ cập nhật sau khi chạy lại với allowlist mới)*  
 **run_id (inject stale refund):** `person2-inject`  
 **run_id (inject R8/R9 rules test):** `person2-inject-rules`  
 **Ngày:** 2026-04-15  
 **Owner:** Dam Le Van Toan (Cleaning & Quality Owner — Person 2)
+**Allowlist vào thời điểm này:** `policy_refund_v4`, `sla_p1_2026`, `it_helpdesk_faq`, `hr_leave_policy`, **`access_control_sop`** *(mới thêm)*
 
 ---
 
@@ -82,12 +83,20 @@
 | **E7** | **no_bom_or_control_in_chunk_text** | **halt** | OK | OK |
 | **E8** | **chunk_ids_unique** | **halt** | OK | OK |
 | **E9** | **no_metadata_comments_in_cleaned** | **halt** | OK | OK |
+| **E10** | **doc_id_in_contract_allowlist** | **warn** | OK | OK |
 
-*E7, E8, E9 là 3 expectation mới của Person 2 (E9 thêm sau khi merge với Person 1).*
+*E7, E8 = Person 2 (BOM guard, unique chunk_id). E9 = Person 2 validate Person 1's Rule 7. E10 = Person 2 mirror ALLOWED_DOC_IDS từ `cleaning_rules.py` vào expectation — tự động cập nhật khi contract mở rộng (vd `access_control_sop`).*
 
 ---
 
-## 5. Inject test các rule mới — R8/R9 (Person 2) — run_id: `person2-inject-rules`
+## 6. Allowlist mở rộng — `access_control_sop` (git pull từ main)
+
+**Thay đổi:** `ALLOWED_DOC_IDS` trong `cleaning_rules.py` được thêm `"access_control_sop"` để đồng bộ với `contracts/data_contract.yaml` (source `data/docs/access_control_sop.txt`, `effective_from: 2026-02-01`).
+
+**Tác động lên Person 2's files:**
+- Số liệu CSV mẫu hiện tại **không đổi** (chưa có chunk nào `doc_id=access_control_sop` trong `policy_export_dirty.csv`).
+- `quality/expectations.py` được thêm **E10** `doc_id_in_contract_allowlist` — import trực tiếp `ALLOWED_DOC_IDS` từ `cleaning_rules.py`, tự động cập nhật sau lần mở rộng này và lần tiếp theo.
+- Nếu nhóm nhập CSV thật có chunk `access_control_sop`, chúng sẽ được process (không bị `unknown_doc_id`) và E10 mớị chứng minh pipeline đã sync contract.
 
 **File inject:** `data/raw/inject_rules_test.csv` (4 dòng test)
 
