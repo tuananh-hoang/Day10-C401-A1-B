@@ -1,6 +1,6 @@
 # Báo Cáo Nhóm — Lab Day 10: Data Pipeline & Data Observability
 
-**Tên nhóm:** Team C401-A1-B  
+**Tên nhóm:** Team C401-A1-B
 **Thành viên:**
 | Tên | Vai trò (Day 10) | Công việc chính |
 |-----|------------------|-----------------|
