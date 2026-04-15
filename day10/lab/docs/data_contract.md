@@ -2,6 +2,10 @@
 
 > Bắt đầu từ `contracts/data_contract.yaml` — mở rộng và đồng bộ file này.
 
+**Owner:** Nguyễn Quang Trường (Documentation Owner)  
+**Last updated:** 2026-04-15  
+**Version:** 1.0
+
 ---
 
 ## 1. Nguồn dữ liệu (source map)
